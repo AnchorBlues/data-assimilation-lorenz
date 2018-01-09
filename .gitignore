@@ -1,0 +1,17 @@
+*.pyc
+*.pdf
+*.csv
+*.mp4
+*.gif
+*.o
+*.so
+*.ipynb
+*.out
+*.txt
+*.pkl
+*.c
+*.jpeg
+data_dir/*
+!.gitkeep
+.DS_Store
+flycheck_*
