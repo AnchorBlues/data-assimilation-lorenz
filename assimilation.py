@@ -114,13 +114,11 @@ class EnsembleKalmanFilter(Assimilation):
         self.Enxa = np.zeros((self.LMAX, self.N, self.m))
 
     def for_loop(self):
-        for l in range(self.LMAX):
-            if l == 0:
-                self.Enxa[l] = self._next_time_step(self.initial_Enxa,
-                                                    self.Xo[l])
-            else:
-                self.Enxa[l] = self._next_time_step(self.Enxa[l - 1],
-                                                    self.Xo[l])
+        self.Enxa[0] = self._next_time_step(self.initial_Enxa,
+                                            self.Xo[0])
+        for l in range(1, self.LMAX):
+            self.Enxa[l] = self._next_time_step(self.Enxa[l - 1],
+                                                self.Xo[l])
 
         self.Xa = np.average(self.Enxa, axis=2)
         self.RMSE_a[:] = using_jit.cal_RMSE_2D(self.Xa, self.Xt)
@@ -140,13 +138,11 @@ class EnsembleKalmanSmoother(Assimilation):
         self.Enxa = np.zeros((self.LMAX, self.N, self.m))
 
     def for_loop(self):
-        for l in range(self.LMAX - 1):
-            if l == 0:
-                self.Enxa[l] = self._next_time_step(self.initial_Enxa,
-                                                    self.Xo[l + 1])
-            else:
-                self.Enxa[l] = self._next_time_step(self.Enxa[l - 1],
-                                                    self.Xo[l + 1])
+        self.Enxa[0] = self._next_time_step(self.initial_Enxa,
+                                            self.Xo[1])
+        for l in range(1, self.LMAX - 1):
+            self.Enxa[l] = self._next_time_step(self.Enxa[l - 1],
+                                                self.Xo[l + 1])
 
         # 最後の1時間ステップだけは、解析値をフリーラン。
         self.Enxa[self.LMAX - 1] \
@@ -176,7 +172,12 @@ class EnsembleKalmanFilter_4D(Assimilation):
         self.RMSE_rea_AW = np.zeros(self.LMAX_for_4D)
 
     def for_loop(self):
-        for l in range(self.LMAX_for_4D):
+        idx = range(self.J)
+        self.Xa[idx], xa0, self.Enxa[0] \
+            = self._next_time_step(self.initial_Enxa,
+                                   self.Xo[idx])
+        self.RMSE_rea_AW[0] = np.nan
+        for l in range(1, self.LMAX_for_4D):
             # self.J=5、つまり同化ウィンドウ内で5つ観測を取り込むとすると、
             # 時刻l-1に於ける解析値と時刻l, ..., l+4における観測値をもとに、
             # 時刻l, ..., l+4における解析値(self.Xa[idx])を計算する。
@@ -187,17 +188,11 @@ class EnsembleKalmanFilter_4D(Assimilation):
             # lに対応するインデックス
             idx = range(l * self.J, (l + 1) * self.J)
 
-            if l == 0:
-                self.Xa[idx], xa0, self.Enxa[l] \
-                    = self._next_time_step(self.initial_Enxa,
-                                           self.Xo[idx])
-                self.RMSE_rea_AW[l] = np.nan
-            else:
-                self.Xa[idx], xa0, self.Enxa[l] \
-                    = self._next_time_step(self.Enxa[l - 1],
-                                           self.Xo[idx])
-                self.RMSE_rea_AW[l] = using_jit.cal_RMSE(
-                    xa0, self.Xt[l * self.J - 1])
+            self.Xa[idx], xa0, self.Enxa[l] \
+                = self._next_time_step(self.Enxa[l - 1],
+                                       self.Xo[idx])
+            self.RMSE_rea_AW[l] = using_jit.cal_RMSE(
+                xa0, self.Xt[l * self.J - 1])
 
         self.RMSE_a[:] = using_jit.cal_RMSE_2D(self.Xa, self.Xt)
         # for l in range(self.LMAX_for_4D):

@@ -32,7 +32,13 @@ class KalmanFilter_4D(Assimilation):
         self.RMSE_rea_AW = np.zeros(self.LMAX_for_4D)
 
     def for_loop(self):
-        for l in range(self.LMAX_for_4D):
+        idx = range(self.J)
+        self.Xa[idx], xa0, self.Pa[0] \
+            = self._next_time_step(self.initial_xa,
+                                   self.initial_Pa,
+                                   self.Xo[idx])
+        self.RMSE_rea_AW[0] = np.nan
+        for l in range(1, self.LMAX_for_4D):
             # self.J=5、つまり同化ウィンドウ内で5つ観測を取り込むとすると、
             # 時刻l-1に於ける解析値と時刻l, ..., l+4における観測値をもとに、
             # 時刻l, ..., l+4における解析値(self.Xa[idx])を計算する。
@@ -43,19 +49,12 @@ class KalmanFilter_4D(Assimilation):
             # lに対応するインデックス
             idx = range(l * self.J, (l + 1) * self.J)
 
-            if l == 0:
-                self.Xa[idx], xa0, self.Pa[l] \
-                    = self._next_time_step(self.initial_xa,
-                                           self.initial_Pa,
-                                           self.Xo[idx])
-                self.RMSE_rea_AW[l] = np.nan
-            else:
-                self.Xa[idx], xa0, self.Pa[l] \
-                    = self._next_time_step(self.Xa[l * self.J - 1],
-                                           self.Pa[l - 1],
-                                           self.Xo[idx])
-                self.RMSE_rea_AW[l] \
-                    = using_jit.cal_RMSE(xa0, self.Xt[l * self.J - 1])
+            self.Xa[idx], xa0, self.Pa[l] \
+                = self._next_time_step(self.Xa[l * self.J - 1],
+                                       self.Pa[l - 1],
+                                       self.Xo[idx])
+            self.RMSE_rea_AW[l] \
+                = using_jit.cal_RMSE(xa0, self.Xt[l * self.J - 1])
 
         self.RMSE_a[:] = using_jit.cal_RMSE_2D(self.Xa, self.Xt)
         # for l in range(self.LMAX_for_4D):

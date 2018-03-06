@@ -27,15 +27,13 @@ class KalmanSmoother(Assimilation):
         self.delta = delta
 
     def for_loop(self):
-        for l in range(self.LMAX - 1):
-            if l == 0:
-                self.Xa[l], self.Pa[l] = self._next_time_step(self.initial_xa,
-                                                              self.initial_Pa,
-                                                              self.Xo[l + 1])
-            else:
-                self.Xa[l], self.Pa[l] = self._next_time_step(self.Xa[l - 1],
-                                                              self.Pa[l - 1],
-                                                              self.Xo[l + 1])
+        self.Xa[0], self.Pa[0] = self._next_time_step(self.initial_xa,
+                                                      self.initial_Pa,
+                                                      self.Xo[1])
+        for l in range(1, self.LMAX - 1):
+            self.Xa[l], self.Pa[l] = self._next_time_step(self.Xa[l - 1],
+                                                          self.Pa[l - 1],
+                                                          self.Xo[l + 1])
 
         self.RMSE_a[:] = using_jit.cal_RMSE_2D(self.Xa, self.Xt)
         # 最後の1時間ステップだけは、解析値をフリーラン。

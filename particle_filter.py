@@ -69,20 +69,20 @@ class ParticleFilter(Assimilation):
         self.Enxf = np.zeros_like(self.Enxa)
         self.delta = delta
         self.diagR = np.diag(self.R)
+        self.l = None
         if stop_l is None:
             self.stop_l = self.LMAX
         else:
             self.stop_l = stop_l
 
     def for_loop(self):
-        for l in range(self.LMAX):
+        self.l = 0
+        self.Enxa[0] = self._next_time_step(self.initial_Enxa,
+                                            self.Xo[0])
+        for l in range(1, self.LMAX):
             self.l = l
-            if l == 0:
-                self.Enxa[l] = self._next_time_step(self.initial_Enxa,
-                                                    self.Xo[l])
-            else:
-                self.Enxa[l] = self._next_time_step(self.Enxa[l - 1],
-                                                    self.Xo[l])
+            self.Enxa[l] = self._next_time_step(self.Enxa[l - 1],
+                                                self.Xo[l])
 
             if self.stop_l == l:
                 break

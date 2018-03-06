@@ -46,7 +46,11 @@ class FourDimensionalVariationalMethod(Assimilation):
     B = property((lambda self: self._B), set_B)
 
     def for_loop(self, verbose=False):
-        for l in range(self.LMAX_for_4D):
+        idx = range(self.J)
+        self.Xa[idx], xa0 = self._next_time_step(self.initial_xa,
+                                                 self.Xo[idx])
+        self.RMSE_rea_AW[0] = np.nan
+        for l in range(1, self.LMAX_for_4D):
             # self.J=5、つまり同化ウィンドウ内で5つ観測を取り込むとすると、
             # 時刻l-1に於ける解析値と時刻l, ..., l+4における観測値をもとに、
             # 時刻l, ..., l+4における解析値(self.Xa[idx])を計算する。
@@ -57,15 +61,10 @@ class FourDimensionalVariationalMethod(Assimilation):
             # lに対応するインデックス
             idx = range(l * self.J, (l + 1) * self.J)
 
-            if l == 0:
-                self.Xa[idx], xa0 = self._next_time_step(self.initial_xa,
-                                                         self.Xo[idx])
-                self.RMSE_rea_AW[l] = np.nan
-            else:
-                self.Xa[idx], xa0 = self._next_time_step(self.Xa[l * self.J - 1],
-                                                         self.Xo[idx])
-                self.RMSE_rea_AW[l] \
-                    = using_jit.cal_RMSE(xa0, self.Xt[l * self.J - 1])
+            self.Xa[idx], xa0 = self._next_time_step(self.Xa[l * self.J - 1],
+                                                     self.Xo[idx])
+            self.RMSE_rea_AW[l] = \
+                using_jit.cal_RMSE(xa0, self.Xt[l * self.J - 1])
 
             if verbose and l % 100 == 0:
                 print("l=" + str(l) + ', rmse=' + str(self.RMSE_rea_AW[l]))

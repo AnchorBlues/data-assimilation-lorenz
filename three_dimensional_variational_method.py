@@ -29,17 +29,15 @@ class ThreeDimensionalVariationalMethod(Assimilation):
         self.est_R = np.zeros((self.p, self.p))
 
     def for_loop(self):
-        for l in range(self.LMAX):
-            if l == 0:
-                self.Xa[l], self.Cov_for_est_B[l], \
-                    self.Cov_for_est_B2[l], \
-                    self.Cov_for_est_R[l] = self._next_time_step(self.initial_xa,
-                                                                 self.Xo[l])
-            else:
-                self.Xa[l], self.Cov_for_est_B[l], \
-                    self.Cov_for_est_B2[l], \
-                    self.Cov_for_est_R[l] = self._next_time_step(self.Xa[l - 1],
-                                                                 self.Xo[l])
+        self.Xa[0], self.Cov_for_est_B[0], \
+            self.Cov_for_est_B2[0], \
+            self.Cov_for_est_R[0] = self._next_time_step(self.initial_xa,
+                                                         self.Xo[0])
+        for l in range(1, self.LMAX):
+            self.Xa[l], self.Cov_for_est_B[l], \
+                self.Cov_for_est_B2[l], \
+                self.Cov_for_est_R[l] = self._next_time_step(self.Xa[l - 1],
+                                                             self.Xo[l])
 
         self.RMSE_a[:] = using_jit.cal_RMSE_2D(self.Xa, self.Xt)
         self.est_B = np.average(self.Cov_for_est_B[200:], axis=0)

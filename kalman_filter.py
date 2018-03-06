@@ -32,18 +32,18 @@ class KalmanFilter(Assimilation):
         self.Pf = np.zeros((self.LMAX, self.N, self.N))
         self.ave_Pa = np.zeros((self.N, self.N))
         self.ave_Pf = np.zeros((self.N, self.N))
+        self.l = None
 
     def for_loop(self):
-        for l in range(self.LMAX):
+        self.l = 0
+        self.Xa[0], self.Pa[0] = self._next_time_step(self.initial_xa,
+                                                      self.initial_Pa,
+                                                      self.Xo[0])
+        for l in range(1, self.LMAX):
             self.l = l
-            if l == 0:
-                self.Xa[l], self.Pa[l] = self._next_time_step(self.initial_xa,
-                                                              self.initial_Pa,
-                                                              self.Xo[l])
-            else:
-                self.Xa[l], self.Pa[l] = self._next_time_step(self.Xa[l - 1],
-                                                              self.Pa[l - 1],
-                                                              self.Xo[l])
+            self.Xa[l], self.Pa[l] = self._next_time_step(self.Xa[l - 1],
+                                                          self.Pa[l - 1],
+                                                          self.Xo[l])
 
         self.RMSE_a[:] = using_jit.cal_RMSE_2D(self.Xa, self.Xt)
         self.est_R = np.average(self.Cov_for_est_R[200:], axis=0)
