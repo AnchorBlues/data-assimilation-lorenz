@@ -9,6 +9,7 @@ import numpy as np
 import Lorenz96
 import func_for_assimilate as ffa
 from assimilation import Assimilation
+import using_jit
 
 
 class KF_Estimating_F(Assimilation):

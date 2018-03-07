@@ -13,5 +13,6 @@
 *.jpeg
 data_dir/*
 !.gitkeep
+!C_Lorenz.c
 .DS_Store
 flycheck_*

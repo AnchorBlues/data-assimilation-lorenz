@@ -75,6 +75,21 @@ void double_arr_cpy(double *arr, double *brr, int N){
 void run(double *prev_x, double *x,
          int N, double dt, double F, double days){
   int tmax = (int)round((double)(days / Lorenz96_TimeScale) / dt);
+  int t;
+  double *x_copy = (double *)malloc(sizeof(double) *N);
+  /* prev_xのコピーを作成する */
+  double_arr_cpy(prev_x, x_copy, N);
+  for(t = 0; t < tmax; t++ ){
+    calc(x_copy, x, N, dt, F);
+    double_arr_cpy(x, x_copy, N);
+  }
+  free(x_copy);
+}
+
+
+void run2(double *prev_x, double *x,
+          int N, double dt, double F, int tmax){
+  /* tmax(イテレーション回数)を引数として与えて計算する。 */
   int i, t;
   double *x_copy = (double *)malloc(sizeof(double) *N);
   /* prev_xのコピーを作成する */

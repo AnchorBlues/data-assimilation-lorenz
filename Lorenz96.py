@@ -344,7 +344,7 @@ class Lorenz96RungeKutta4:
         initial_Xa = np.zeros((self.N, m))
         for k in range(m):
             initial_Xa[:, k] \
-                 = self.get_spin_upped_profile(random_state=random_state + k)
+                = self.get_spin_upped_profile(random_state=random_state + k)
 
         return initial_Xa
 
@@ -374,3 +374,37 @@ class Lorenz96RungeKutta4:
 
     def get_ensemble_xf_in_AW(self, X, J, days):
         return get_ensemble_xf_in_AW(X, J, self.F, dt=self.dt, days=days)
+
+
+if __name__ == '__main__':
+    import time
+    model = Lorenz96RungeKutta4(F=8.0, dt=0.05, N=40)
+
+    # テスト1
+    x2 = model.run(model.init_x, 50)
+    print(x2[:5], model.init_x[:5])
+    x2 = model.run(x2, 10)
+    print(x2[:5])
+    print("")
+
+    # テスト2
+    np.random.seed(0)
+    X2 = (x2 + np.random.randn(20, 40)).T
+    start = time.time()
+    X2 = model.ensemble_run(X2, 50)
+    print("elapsed time:", time.time() - start)
+    print(X2[:, 0])
+    print("")
+
+    # テスト3
+    M = model.jacobian_analysis(x2, 10)
+    M2 = model.jacobian(x2, 10)
+    diff = np.sum(np.abs(M - M2))
+    print(M[0, 0], M2[0, 0], diff, x2[:2])
+    print("")
+
+    # テスト4
+    for bool_ in [True, False]:
+        M = model.get_M_in_AW(x2, J=4, days=1, analysis=bool_)
+        print(M[0, 0, 0], x2[:2])
+    print("")
