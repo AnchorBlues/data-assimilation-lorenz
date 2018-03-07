@@ -49,7 +49,23 @@ lorenz.run2.argtypes = [
 ]
 
 
+lorenz.ensemble_run2.restype = None
+lorenz.ensemble_run2.argtypes = [
+    ndpointer(c_double),
+    ndpointer(c_double),
+    c_int, c_int,
+    c_double, c_double, c_int
+]
+
+
 class Lorenz96RungeKutta4UsingCtypes(object):
+    """
+    引数にあるpure_python_flgですが、
+    これをTrueにすると、
+    - ヤコビアンを計算する際のdfdxの計算がCでなくnumpyになる
+    - ensemble_runを実行する際のアンサンブル方向のfor loopがpythonで回る(Falseだと、ensemble_run全体がCで実行される)
+    以上のように変わります。
+    """
     def __init__(self, F, dt, N, pure_python_flg=False):
         self.F = F
         self.dt = dt
@@ -58,6 +74,7 @@ class Lorenz96RungeKutta4UsingCtypes(object):
         self.init_x[:] = self.F
         self.init_x[self.N // 2] = self.F * (1 + 1e-3)
         self.dfdx = self._dfdx_pure_python if pure_python_flg else self._dfdx
+        self.ensemble_run = self._ensemble_run_pure_python if pure_python_flg else self._ensemble_run
 
     def f(self, x):
         xa = np.empty(self.N)
@@ -159,7 +176,7 @@ class Lorenz96RungeKutta4UsingCtypes(object):
 
         return jac
 
-    def ensemble_run(self, prev_Xa, days):
+    def _ensemble_run_pure_python(self, prev_Xa, days):
         if days == 0:
             return prev_Xa
 
@@ -170,6 +187,19 @@ class Lorenz96RungeKutta4UsingCtypes(object):
             Xf[:, k] = self.run(prev_Xa[:, k], days)
 
         return Xf
+
+    def _ensemble_run(self, prev_Xa, days):
+        if days == 0:
+            return prev_Xa
+
+        assert prev_Xa.shape[0] == self.N
+        t = days / Lorenz96_TimeScale
+        imax = int(round(t / self.dt, 0))
+        m = prev_Xa.shape[1]
+        Xf = np.empty(self.N * m)
+        lorenz.ensemble_run2(prev_Xa.astype(np.float64).reshape(self.N * m),
+                             Xf, self.N, m, self.dt, self.F, imax)
+        return Xf.reshape(self.N, m)
 
     def get_M_in_AW(self, x, J, days, analysis=True):
         M_in_AW = np.zeros((J, self.N, self.N))

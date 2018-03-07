@@ -90,19 +90,40 @@ void run(double *prev_x, double *x,
 void run2(double *prev_x, double *x,
           int N, double dt, double F, int tmax){
   /* tmax(イテレーション回数)を引数として与えて計算する。 */
-  int i, t;
+  int t;
   double *x_copy = (double *)malloc(sizeof(double) *N);
   /* prev_xのコピーを作成する */
-  for(i = 0;i < N;i++ ){
-    x_copy[i] = prev_x[i];
-  }
+  double_arr_cpy(prev_x, x_copy, N);
   for(t = 0; t < tmax; t++ ){
     calc(x_copy, x, N, dt, F);
-    for(i = 0;i < N;i++ ){
-      x_copy[i] = x[i];
-    }
+    double_arr_cpy(x, x_copy, N);
   }
   free(x_copy);
+}
+
+void ensemble_run2(double *prev_X, double *X,
+                   int N, int m, double dt, double F, int tmax){
+  /* ensemble_run関数は作成しておりません */
+  /* tmax(イテレーション回数)を引数として与えて計算する。 */
+  /* x_tmp1から計算を走らせて、x_tmp2に格納する */
+  int j, i;
+  double *x_tmp1 = (double *)malloc(sizeof(double) *N);
+  double *x_tmp2 = (double *)malloc(sizeof(double) *N);
+  /* jは、アンサンブル方向のイテレーション */
+  for (j = 0; j < m; j++ ){
+    /* prex_Xの情報をtmp1にコピー*/
+    for (i = 0; i < N; i++ ){
+      x_tmp1[i] = prev_X[j + m * i];
+    }
+    /* メインの計算 */
+    run2(x_tmp1, x_tmp2, N, dt, F, tmax);
+    /* tmp2の情報をXにコピー */
+    for (i = 0; i < N; i++ ){
+      X[j + m * i] = x_tmp2[i];
+    }
+  }
+  free(x_tmp1);
+  free(x_tmp2);
 }
 
 
