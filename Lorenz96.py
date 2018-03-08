@@ -5,9 +5,7 @@
 import random
 from numba import jit, f8, i1
 import numpy as np
-
-# Lorenz96モデルでのdt=1.0が、天気予報(実時間)での5.0日に対応。1日<->dt=0.2, 6時間<->dt=0.05
-Lorenz96_TimeScale = 5.0
+from Lorenz96_base import Lorenz96RungeKutta4Base, Lorenz96_TimeScale
 
 
 def initial_taskx(N):  # 課題演習に取り組む際に用いる初期値を作成する
@@ -319,15 +317,7 @@ def get_ensemble_xf_in_AW(X, J, F, dt=0.05, days=0.25):
     return Xf_in_AW
 
 
-class Lorenz96RungeKutta4:
-    def __init__(self, F, dt, N):
-        self.F = F
-        self.dt = dt
-        self.N = N
-        self.init_x = np.zeros(self.N)
-        self.init_x[:] = self.F
-        self.init_x[self.N // 2] = self.F * (1 + 1e-3)
-
+class Lorenz96RungeKutta4(Lorenz96RungeKutta4Base):
     def f(self, x):
         return f_oigawa(x, self.F)
 

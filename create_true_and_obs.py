@@ -4,6 +4,7 @@
 # モデルの値、観測の値を作成する。
 
 import numpy as np
+from Lorenz96_base import Lorenz96_TimeScale
 import Lorenz96
 import subroutine
 
@@ -50,7 +51,7 @@ class DataCreator(object):
     def __init__(self, N=40, dt=0.05, F_id=0, random_state=0):
         self.N = N
         self.dt = dt
-        self.ddays = self.dt * Lorenz96.Lorenz96_TimeScale
+        self.ddays = self.dt * Lorenz96_TimeScale
         self.F_id = F_id
         self.IMAX = int(2 * 365.0 / self.ddays)
         self.F = F[F_id].get(self.IMAX)

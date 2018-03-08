@@ -3,6 +3,11 @@
 #include <stdlib.h>
 #include <math.h>
 
+/*
+  コンパイル方法は、
+  gcc -cpp -fPIC -shared C_Lorenz.c -lm -o lorenz.so
+*/
+
 double const Lorenz96_TimeScale = 5.0;
 
 void f(double *xb, double *xa, int N, double F){

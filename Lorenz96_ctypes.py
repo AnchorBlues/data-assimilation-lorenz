@@ -2,9 +2,7 @@ from ctypes import c_double, c_int
 import random
 import numpy as np
 from numpy.ctypeslib import ndpointer
-
-# Lorenz96モデルでのdt=1.0が、天気予報(実時間)での5.0日に対応。1日<->dt=0.2, 6時間<->dt=0.05
-Lorenz96_TimeScale = 5.0
+from Lorenz96_base import Lorenz96RungeKutta4Base, Lorenz96_TimeScale
 
 lorenz = np.ctypeslib.load_library("lorenz.so", ".")
 
@@ -58,7 +56,7 @@ lorenz.ensemble_run2.argtypes = [
 ]
 
 
-class Lorenz96RungeKutta4UsingCtypes(object):
+class Lorenz96RungeKutta4UsingCtypes(Lorenz96RungeKutta4Base):
     """
     引数にあるpure_python_flgですが、
     これをTrueにすると、
@@ -67,12 +65,7 @@ class Lorenz96RungeKutta4UsingCtypes(object):
     以上のように変わります。
     """
     def __init__(self, F, dt, N, pure_python_flg=False):
-        self.F = F
-        self.dt = dt
-        self.N = N
-        self.init_x = np.zeros(self.N)
-        self.init_x[:] = self.F
-        self.init_x[self.N // 2] = self.F * (1 + 1e-3)
+        super().__init__(F, dt, N)
         self.dfdx = self._dfdx_pure_python if pure_python_flg else self._dfdx
         self.ensemble_run = self._ensemble_run_pure_python if pure_python_flg else self._ensemble_run
 
